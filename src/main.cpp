@@ -1,40 +1,36 @@
-#include <Arduino.h>
-#include <SPI.h>
-#include <mcp2515.h>
+#include <SPI.h>     //Library for using SPI Communication
+#include <mcp2515.h> //Library for using CAN Communication (https://github.com/autowp/arduino-mcp2515/)
 
 struct can_frame canMsg;
 
-MCP2515 mcp2515(10); // spi pin is 10
+MCP2515 mcp2515(10);
 
 void setup()
 {
-  Serial.begin(9600); // begin Serial communication at 9600 buadrate
-  SPI.begin();        // begin SPI Communication
+  while (!Serial)
+    ;
+  Serial.begin(9600);
+  SPI.begin(); // Begins SPI communication
   mcp2515.reset();
-  mcp2515.setBitrate(CAN_500KBPS, MCP_8MHZ); // CAN Speed at 500KBPS and 8MHz crystal
+  mcp2515.setBitrate(CAN_500KBPS, MCP_8MHZ); // Sets CAN at speed 500KBPS and Clock 8MHz
   mcp2515.setNormalMode();
-
-  delay(3000);
-
-  Serial.print("Setup Complete \n");
 }
 
 void loop()
 {
-  Serial.println(mcp2515.readMessage(&canMsg));
-  if (mcp2515.readMessage(&canMsg) == MCP2515::ERROR_OK)
-  {
-    Serial.print(canMsg.can_id, HEX); // print ID
-    Serial.print(" ");
-    Serial.print(canMsg.can_dlc, HEX); // print DLC
-    Serial.print(" ");
 
-    for (int i = 0; i < canMsg.can_dlc; i++)
-    { // print the data
-      Serial.print(canMsg.data[i], HEX);
-      Serial.print(" ");
-    }
-
-    Serial.println();
-  }
+  canMsg.can_id = 0x036; // CAN id as 0x036
+  canMsg.can_dlc = 8;    // CAN data length as 8
+  canMsg.data[0] = random(0, 7);
+  canMsg.data[1] = random(8, 15);
+  canMsg.data[2] = random(16, 23);
+  canMsg.data[3] = random(24, 31);
+  canMsg.data[5] = random(32, 39);
+  canMsg.data[5] = random(40, 47);
+  canMsg.data[6] = random(48, 55);
+  canMsg.data[7] = random(56, 63);
+  mcp2515.sendMessage(&canMsg); // Sends the CAN message
+  Serial.print("Sending message with ID: ");
+  Serial.println(canMsg.can_id);
+  delay(1000);
 }
